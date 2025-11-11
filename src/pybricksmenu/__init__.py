@@ -173,9 +173,6 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
         # Beep in confirmation of the button press.
         hub.speaker.beep(frequency=300, duration=100)
 
-    # Allow the center button to act as an emergency stop again.
-    hub.system.set_stop_button(Button.CENTER)
-
     # Beep in confirmation of the choice.
     hub.speaker.beep(frequency=500, duration=100)
 
