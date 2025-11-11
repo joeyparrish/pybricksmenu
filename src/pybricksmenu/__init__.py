@@ -73,9 +73,10 @@ from pybricks.tools import wait
 # These are both in mV (millivolts).
 # 8.3V is fully charged, even if the charger would continue topping up.
 FULL_VOLTAGE_THRESHOLD = 8300
-# 8.0V is low.  Below this, we do not get enough torque for consistent results.
-# FIXME: cite a source for this
-LOW_VOLTAGE_THRESHOLD = 8000
+# Below this voltage, we do not get consistent results.
+# Reddit recommends 8.0V, but this is what we chose.
+# Source: https://www.reddit.com/r/FLL/comments/1h7du3f/comment/mdbmhsf/
+LOW_VOLTAGE_THRESHOLD = 7900
 
 
 def wait_for_button(hub: PrimeHub) -> set[Button]:
