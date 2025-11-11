@@ -66,7 +66,7 @@ while True:
 """
 
 from pybricks.hubs import PrimeHub
-from pybricks.parameters import Button, Icon, Side
+from pybricks.parameters import Button, Color, Icon, Side
 from pybricks.tools import wait
 
 
@@ -143,6 +143,9 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
     # menu, the user can also press bluetooth & center together to quit.
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
 
+    # Use this to indicate that we're waiting for input.
+    hub.light.on(Color.GREEN)
+
     # Set the speaker volume to 50% so our feedback beeps aren't too loud.
     hub.speaker.volume(50)
 
@@ -175,6 +178,9 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
 
     # Beep in confirmation of the choice.
     hub.speaker.beep(frequency=500, duration=100)
+
+    # Use this to indicate that we're running.
+    hub.light.on(Color.MAGENTA)
 
     # Return the item the user picked.
     return item
