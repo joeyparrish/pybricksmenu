@@ -73,13 +73,17 @@ from pybricks.tools import wait
 # These are both in mV (millivolts).
 # 8.3V is fully charged, even if the charger would continue topping up.
 FULL_VOLTAGE_THRESHOLD = 8300
+
 # Below this voltage, we do not get consistent results.
 # Reddit recommends 8.0V, but this is what we chose.
 # Source: https://www.reddit.com/r/FLL/comments/1h7du3f/comment/mdbmhsf/
 LOW_VOLTAGE_THRESHOLD = 7900
 
+# After this much idle time in the menu, shut down.
+MENU_TIMEOUT_SECONDS = 120.0
 
-def wait_for_button(hub: PrimeHub) -> set[Button]:
+
+def wait_for_button(hub: PrimeHub, timeout_seconds: float) -> set[Button]:
     """Wait for a button to be pressed, then return the pressed buttons.
 
     Returns a `Set` of `Button` values when the buttons are released.
@@ -92,21 +96,30 @@ def wait_for_button(hub: PrimeHub) -> set[Button]:
         from pybricks.parameters import Button
         from menu import wait_for_button
 
-        pressed = wait_for_button(hub)
+        pressed = wait_for_button(hub, timeout_seconds=10.0)
         if Button.LEFT in pressed:
             print('Left button pressed!')
     ```
     """
 
+    # Keep track of the time.
+    seconds_remaining = timeout_seconds
+
     # Wait for any buttons to be pressed, and record them.
     pressed = []
-    while not any(pressed):
+    while not any(pressed) and seconds_remaining > 0.0:
         pressed = hub.buttons.pressed()
         wait(10)
+        seconds_remaining -= 10 / 1000
 
     # Wait for all buttons to be released.
-    while any(hub.buttons.pressed()):
+    while any(hub.buttons.pressed()) and seconds_remaining > 0.0:
         wait(10)
+        seconds_remaining -= 10 / 1000
+
+    if seconds_remaining < 0.0:
+      raise TimeoutError(
+          f'Timeout waiting for menu selection after {timeout_seconds}')
 
     # Return the set of pressed buttons.
     return pressed
@@ -118,8 +131,7 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
     Press left to go down, right to go up, and the center button to choose an
     item.  Returns the number (from 1 to `num_items`) of the chosen item.
 
-    To quit to the bootloader, press the center and bluetooth buttons at the
-    same time.
+    To quit to the bootloader, press the bluetooth button.
 
     Sample usage:
 
@@ -140,8 +152,8 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
     """
 
     # The user can always hold the center button to shut down.  While in the
-    # menu, the user can also press bluetooth & center together to quit.
-    hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
+    # menu, the user can also press bluetooth together to quit.
+    hub.system.set_stop_button(Button.BLUETOOTH)
 
     # Use this to indicate that we're waiting for input.
     hub.light.on(Color.GREEN)
@@ -157,7 +169,12 @@ def main_menu(hub: PrimeHub, num_items: int, item: int = 1) -> int:
             hub.display.number(item)
 
         # Wait for buttons to be pressed.
-        pressed = wait_for_button(hub)
+        try:
+            pressed = wait_for_button(hub, timeout_seconds=MENU_TIMEOUT_SECONDS)
+        except TimeoutError as e:
+            print(e)
+            hub.system.shutdown()
+            sys.exit(0)
 
         if Button.LEFT in pressed:
             # Go down, and wrap around if needed.
@@ -228,6 +245,8 @@ def startup_checks(hub):
             icon = Icon.TRUE
         elif status == 3:  # Error
             icon = Icon.SAD
+        else:
+            icon = Icon.FALSE
 
         # So long as we're plugged in, keep showing the icon.
         hub.display.icon(icon)
